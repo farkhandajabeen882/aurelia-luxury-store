@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local admin setup script
+/scripts/setup-admin.mjs
+
+# Local build logs and backup files
+build-error.txt
+*.backup
+*.backup2
+*.bak
+*.backup.tsx.txt
