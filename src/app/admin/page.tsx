@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, type FormEvent } from "react";
@@ -12,11 +11,13 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sparkles,
+  User,
 } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
 
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,10 @@ export default function AdminLoginPage() {
           "Content-Type": "application/json",
         },
         credentials: "same-origin",
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({
+          username,
+          password,
+        }),
       });
 
       const data = await response.json();
@@ -43,6 +47,7 @@ export default function AdminLoginPage() {
         throw new Error(data.message || "Login failed.");
       }
 
+      setUsername("");
       setPassword("");
       router.push("/admin/dashboard");
       router.refresh();
@@ -61,19 +66,23 @@ export default function AdminLoginPage() {
     <main className="grid min-h-screen bg-[#FAFCFF] text-[#111B35] lg:grid-cols-2">
 
       <section className="relative hidden overflow-hidden bg-[#1739BA] px-14 py-16 text-white lg:flex lg:flex-col lg:justify-between">
+
         <div className="absolute -right-28 top-24 h-96 w-96 rounded-full border-[65px] border-white/10" />
+
         <div className="absolute -bottom-48 -left-32 h-[500px] w-[500px] rounded-full border-[90px] border-[#FFE59B]/20" />
 
         <a href="/" className="relative z-10 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FFE59B] text-[#1739BA]">
             <Sparkles size={24} />
           </div>
+
           <span className="text-3xl font-black tracking-[-0.08em]">
             AURELIA<span className="text-[#FFE59B]">.</span>
           </span>
         </a>
 
         <div className="relative z-10 max-w-xl">
+
           <div className="mb-9 inline-flex items-center gap-3 border border-white/25 bg-white/10 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em]">
             <ShieldCheck size={18} className="text-[#FFE59B]" />
             PRIVATE ADMINISTRATION
@@ -97,8 +106,10 @@ export default function AdminLoginPage() {
           </p>
 
           <div className="mt-12 flex flex-wrap gap-4">
+
             <div className="flex items-center gap-3 border border-white/20 bg-white/10 px-5 py-4">
               <ShoppingBag size={22} className="text-[#FFE59B]" />
+
               <span className="text-sm font-semibold">
                 Product Management
               </span>
@@ -106,10 +117,12 @@ export default function AdminLoginPage() {
 
             <div className="flex items-center gap-3 border border-white/20 bg-white/10 px-5 py-4">
               <LockKeyhole size={22} className="text-[#FFE59B]" />
+
               <span className="text-sm font-semibold">
                 Secure Access
               </span>
             </div>
+
           </div>
         </div>
 
@@ -119,12 +132,15 @@ export default function AdminLoginPage() {
       </section>
 
       <section className="flex min-h-screen items-center justify-center px-6 py-16 sm:px-12">
+
         <div className="w-full max-w-md">
+
           <a
             href="/"
             className="mb-12 inline-flex items-center gap-3 text-[#1739BA] lg:hidden"
           >
             <Sparkles size={28} />
+
             <span className="text-2xl font-black tracking-[-0.08em]">
               AURELIA.
             </span>
@@ -145,12 +161,50 @@ export default function AdminLoginPage() {
           </h2>
 
           <p className="mt-6 text-sm leading-8 text-slate-500">
-            Enter your administrator password to continue
-            to your private management dashboard.
+            Enter your administrator username and password
+            to continue to your private management dashboard.
           </p>
 
           <form onSubmit={handleLogin} className="mt-10 space-y-6">
+
+            {/* USERNAME FIELD */}
+
             <div>
+              <label
+                htmlFor="admin-username"
+                className="mb-3 block text-xs font-black uppercase tracking-widest text-slate-700"
+              >
+                Administrator Username
+              </label>
+
+              <div className="flex items-center border border-blue-200 bg-white focus-within:border-[#1739BA]">
+
+                <User
+                  size={20}
+                  className="ml-5 shrink-0 text-[#1739BA]"
+                />
+
+                <input
+                  id="admin-username"
+                  type="text"
+                  value={username}
+                  onChange={(event) => {
+                    setUsername(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="Enter your username"
+                  autoComplete="username"
+                  required
+                  className="min-w-0 flex-1 bg-transparent px-4 py-5 text-sm outline-none"
+                />
+
+              </div>
+            </div>
+
+            {/* PASSWORD FIELD */}
+
+            <div>
+
               <label
                 htmlFor="admin-password"
                 className="mb-3 block text-xs font-black uppercase tracking-widest text-slate-700"
@@ -159,6 +213,7 @@ export default function AdminLoginPage() {
               </label>
 
               <div className="flex items-center border border-blue-200 bg-white focus-within:border-[#1739BA]">
+
                 <LockKeyhole
                   size={20}
                   className="ml-5 shrink-0 text-[#1739BA]"
@@ -181,7 +236,9 @@ export default function AdminLoginPage() {
                 <button
                   type="button"
                   aria-label={
-                    showPassword ? "Hide password" : "Show password"
+                    showPassword
+                      ? "Hide password"
+                      : "Show password"
                   }
                   onClick={() => setShowPassword(!showPassword)}
                   className="p-5 text-slate-500 hover:text-[#1739BA]"
@@ -192,8 +249,11 @@ export default function AdminLoginPage() {
                     <Eye size={20} />
                   )}
                 </button>
+
               </div>
             </div>
+
+            {/* ERROR MESSAGE */}
 
             {error && (
               <div
@@ -204,9 +264,15 @@ export default function AdminLoginPage() {
               </div>
             )}
 
+            {/* LOGIN BUTTON */}
+
             <button
               type="submit"
-              disabled={loading || !password}
+              disabled={
+                loading ||
+                !username.trim() ||
+                !password
+              }
               className="flex w-full items-center justify-center gap-3 bg-[#1739BA] px-6 py-5 text-xs font-black uppercase tracking-[0.16em] text-white transition hover:bg-[#0B287F] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
@@ -221,18 +287,22 @@ export default function AdminLoginPage() {
                 </>
               )}
             </button>
+
           </form>
 
           <div className="mt-10 flex items-start gap-3 border-t border-blue-100 pt-7">
+
             <ShieldCheck
               size={21}
               className="shrink-0 text-[#1739BA]"
             />
+
             <p className="text-xs leading-6 text-slate-500">
               This administration area is restricted to
               authorised users. Authentication uses a
               signed, HTTP-only session cookie.
             </p>
+
           </div>
 
           <a
@@ -242,6 +312,7 @@ export default function AdminLoginPage() {
             <ArrowRight size={16} className="rotate-180" />
             RETURN TO STORE
           </a>
+
         </div>
       </section>
     </main>

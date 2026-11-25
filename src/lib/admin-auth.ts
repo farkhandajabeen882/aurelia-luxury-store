@@ -1,9 +1,13 @@
-
 import "server-only";
 
 import { cookies } from "next/headers";
-import { jwtVerify, SignJWT } from "jose";
-import { scryptSync, timingSafeEqual } from "node:crypto";
+import { connection } from "next/server";
+
+import {
+  createHmac,
+  scryptSync,
+  timingSafeEqual,
+} from "node:crypto";
 
 export const ADMIN_COOKIE = "aurelia_admin_session";
 
@@ -14,7 +18,7 @@ function getSecret() {
     throw new Error("Admin session secret is not configured securely.");
   }
 
-  return new TextEncoder().encode(secret);
+  return secret;
 }
 
 export function verifyAdminPassword(password: string): boolean {
@@ -47,28 +51,68 @@ export function verifyAdminPassword(password: string): boolean {
   }
 }
 
+function signPayload(payload: string): string {
+  return createHmac("sha256", getSecret())
+    .update(payload)
+    .digest("base64url");
+}
+
 export async function createAdminToken(): Promise<string> {
-  return new SignJWT({ role: "admin" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("8h")
-    .sign(getSecret());
+  const payload = Buffer.from(
+    JSON.stringify({
+      role: "admin",
+      exp: Date.now() + 8 * 60 * 60 * 1000,
+    })
+  ).toString("base64url");
+
+  const signature = signPayload(payload);
+
+  return `${payload}.${signature}`;
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(ADMIN_COOKIE)?.value;
+  await connection();
 
-    if (!token) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ADMIN_COOKIE)?.value;
+
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const parts = token.split(".");
+
+    if (parts.length !== 2) {
       return false;
     }
 
-    const { payload } = await jwtVerify(token, getSecret(), {
-      algorithms: ["HS256"],
-    });
+    const [payload, signature] = parts;
 
-    return payload.role === "admin";
+    const expected = Buffer.from(
+      signPayload(payload),
+      "base64url"
+    );
+
+    const actual = Buffer.from(signature, "base64url");
+
+    if (actual.length !== expected.length) {
+      return false;
+    }
+
+    if (!timingSafeEqual(actual, expected)) {
+      return false;
+    }
+
+    const data = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8")
+    );
+
+    return (
+      data.role === "admin" &&
+      typeof data.exp === "number" &&
+      data.exp > Date.now()
+    );
   } catch {
     return false;
   }

@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -11,9 +10,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    const username = body?.username;
     const password = body?.password;
 
     if (
+      typeof username !== "string" ||
+      username.trim().length === 0 ||
+      username.length > 200 ||
       typeof password !== "string" ||
       password.length === 0 ||
       password.length > 1024
@@ -21,17 +24,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Please enter a valid password.",
+          message: "Please enter a valid username and password.",
         },
         { status: 400 }
       );
     }
 
-    if (!verifyAdminPassword(password)) {
+    const adminUsername = process.env.ADMIN_USERNAME;
+
+    if (
+      !adminUsername ||
+      username !== adminUsername ||
+      !verifyAdminPassword(password)
+    ) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid admin credentials.",
+          message: "Invalid username or password.",
         },
         { status: 401 }
       );
@@ -55,6 +64,7 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
+
   } catch (error) {
     console.error("Admin login error:", error);
 
